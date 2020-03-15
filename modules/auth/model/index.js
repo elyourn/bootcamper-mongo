@@ -1,32 +1,32 @@
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
 
 const UserSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: [ true, 'Please add a name'],
+        required: [true, 'Please add a name'],
     },
     email: {
         type: String,
-        required: [ true, 'Please add an email'],
+        required: [true, 'Please add an email'],
         unique: true,
         match: [
-            /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-            'Please add a valid email'
-        ]
+            /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/, // eslint-disable-line
+            'Please add a valid email',
+        ],
     },
     role: {
         type: String,
         enum: ['user', 'publisher'],
-        default: 'user'
+        default: 'user',
     },
     password: {
         type: String,
         required: [true, 'Please add a password'],
         minlength: 6,
-        select: false
+        select: false,
     },
     resetPassword: String,
     resetPasswordToken: String,
@@ -34,10 +34,10 @@ const UserSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now,
-    }
+    },
 });
 
-//Encrypt password using bcrypt
+// Encrypt password using bcrypt
 
 UserSchema.pre('save', async function(next) {
     if (!this.isModified('password')) {
@@ -49,29 +49,29 @@ UserSchema.pre('save', async function(next) {
     next();
 });
 
-UserSchema.methods.getSignedJwtToken = function () {
+UserSchema.methods.getSignedJwtToken = function() {
     return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRE
+        expiresIn: process.env.JWT_EXPIRE,
     });
 };
 
-//Match user entered password to hashed password in database
-UserSchema.methods.matchPassword = async function (enteredPassword) {
-    return await bcrypt.compare(enteredPassword, this.password);
+// Match user entered password to hashed password in database
+UserSchema.methods.matchPassword = async function(enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password); // eslint-disable-line
 };
 
 // Generate and hash password token
 UserSchema.methods.getResetPasswordToken = function() {
-    //Generate token
+    // Generate token
     const resetToken = crypto.randomBytes(20).toString('hex');
 
-    //Hash token and set to resetPasswordToken field
+    // Hash token and set to resetPasswordToken field
     this.resetPasswordToken = crypto
         .createHash('sha256')
         .update(resetToken)
         .digest('hex');
 
-    //Set expire 
+    // Set expire
     this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
 
     return resetToken;
